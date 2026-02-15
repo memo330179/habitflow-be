@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: habitflow-postgres
+    environment:
+      POSTGRES_USER: habitflow
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: habitflow_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - habitflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habitflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: habitflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - habitflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: habitflow-auth-service
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: habitflow
+      DATABASE_PASSWORD: dev_password
+      DATABASE_NAME: habitflow_auth
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: change_this_in_production_secret_key_12345
+      JWT_REFRESH_SECRET: change_this_in_production_refresh_secret_67890
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - habitflow-network
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  habitflow-network:
+    driver: bridge
