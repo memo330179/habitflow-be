@@ -57,6 +57,10 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: change_this_in_production_secret_key_12345
       JWT_REFRESH_SECRET: change_this_in_production_refresh_secret_67890
+      GOOGLE_CLIENT_ID: your_client_id_here
+      GOOGLE_CLIENT_SECRET: your_client_secret_here
+      GOOGLE_CALLBACK_URL: http://localhost:3000/api/v1/auth/google/callback
+      ENCRYPTION_KEY: change_this_32_character_key_123
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,9 +68,6 @@ services:
         condition: service_healthy
     networks:
       - habitflow-network
-    volumes:
-      - ./src:/app/src
-      - ./node_modules:/app/node_modules
 
 volumes:
   postgres_data:
